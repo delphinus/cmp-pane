@@ -1,21 +1,48 @@
 # cmp-wezterm
 
-[WezTerm](https://wezfurlong.org/wezterm/index.html) source for [nvim-cmp](https://github.com/hrsh7th/nvim-cmp).
+[WezTerm](https://wezfurlong.org/wezterm/index.html) source for [nvim-cmp](https://github.com/hrsh7th/nvim-cmp) and [blink.cmp](https://github.com/Saghen/blink.cmp).
 
 ## What's this?
 
-This is a source for nvim-cmp to search candidates from contents of any other pane.
+This is a completion source to search candidates from contents of any other WezTerm pane.
 
 ## Requirements
 
 * Neovim v0.10.0
-* nvim-cmp
+* nvim-cmp or blink.cmp
 * WezTerm
 
 ## Installation
 
+### With nvim-cmp
+
 ```lua
 { "delphinus/cmp-wezterm" },
+```
+
+```lua
+require("cmp").setup {
+  sources = {
+    { name = "wezterm" },
+  },
+}
+```
+
+### With blink.cmp
+
+```lua
+{
+  "saghen/blink.cmp",
+  dependencies = { "delphinus/cmp-wezterm" },
+  opts = {
+    sources = {
+      default = { "wezterm" },
+      providers = {
+        wezterm = { name = "wezterm", module = "blink-cmp-wezterm" },
+      },
+    },
+  },
+}
 ```
 
 ## More info

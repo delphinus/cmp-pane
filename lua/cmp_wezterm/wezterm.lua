@@ -1,15 +1,41 @@
 local config = require "cmp_wezterm.config"
 
+---@param msg string
+local function log(msg)
+  local ok, debug = pcall(require, "cmp.utils.debug")
+  if ok then
+    debug.log(msg)
+  end
+end
+
 ---@class CmpWeztermWezterm
 ---@field callback fun(result?: table<string, CmpWeztermPane>): nil
 ---@field word string
+---@field cancelled boolean
+---@field _handles vim.SystemObj[]
 local Wezterm = {}
 
 ---@param word string
 ---@param callback fun(result?: table<string, CmpWeztermPane>): nil
 ---@return CmpWeztermWezterm
 Wezterm.new = function(word, callback)
-  return setmetatable({ word = word:lower(), callback = callback }, { __index = Wezterm })
+  return setmetatable({
+    word = word:lower(),
+    callback = callback,
+    cancelled = false,
+    _handles = {},
+  }, { __index = Wezterm })
+end
+
+---@return nil
+function Wezterm:cancel()
+  self.cancelled = true
+  for _, h in ipairs(self._handles) do
+    pcall(function()
+      h:kill(15)
+    end)
+  end
+  self._handles = {}
 end
 
 ---@class CmpWeztermPane
@@ -23,11 +49,17 @@ end
 
 ---@return nil
 function Wezterm:gather()
+  if self.cancelled then
+    return self.callback()
+  end
   local current_pane = vim.env.WEZTERM_PANE
   if not current_pane then
     return self.callback()
   end
   self:system({ "cli", "list" }, function(result)
+    if self.cancelled then
+      return
+    end
     ---@type CmpWeztermPaneList
     local pane_list = vim.iter(vim.gsplit(result, "\n", { plain = true })):fold(
       { panes = {}, current = {} },
@@ -62,6 +94,9 @@ end
 ---@param panes CmpWeztermPane[]
 ---@return nil
 function Wezterm:fetch_panes(panes)
+  if self.cancelled then
+    return self.callback()
+  end
   if #panes == 0 then
     return self.callback()
   end
@@ -71,6 +106,9 @@ function Wezterm:fetch_panes(panes)
   ---@param pane CmpWeztermPane
   vim.iter(panes):each(function(pane)
     self:system({ "cli", "get-text", "--pane-id", pane.id }, function(content)
+      if self.cancelled then
+        return
+      end
       self:parse_pane(pane, word_map, content)
       count = count + 1
       if count == #panes then
@@ -108,16 +146,25 @@ end
 ---@param cb fun(result: string): nil
 function Wezterm:system(cmd, cb)
   table.insert(cmd, 1, config.executable)
-  local ok, err = pcall(vim.system, cmd, { text = true }, function(obj)
-    if obj.code == 0 then
-      cb(obj.stdout)
-    else
-      require("cmp.utils.debug").log(("[cmp_wezterm] code: %d, stderr: %s"):format(obj.code, obj.stderr))
-      self.callback()
-    end
+  local handle
+  local ok, err = pcall(function()
+    handle = vim.system(cmd, { text = true }, function(obj)
+      if self.cancelled then
+        return
+      end
+      if obj.code == 0 then
+        cb(obj.stdout)
+      else
+        log(("[cmp_wezterm] code: %d, stderr: %s"):format(obj.code, obj.stderr))
+        self.callback()
+      end
+    end)
   end)
+  if ok and handle then
+    table.insert(self._handles, handle)
+  end
   if not ok then
-    require("cmp.utils.debug").log(("[cmp_wezterm] failed to spawn: %s"):format(err))
+    log(("[cmp_wezterm] failed to spawn: %s"):format(err))
     self.callback()
   end
 end
@@ -127,7 +174,12 @@ return {
 
   ---@param word string
   ---@param callback fun(words?: table<string, CmpWeztermPane>): nil
+  ---@return fun(): nil cancel
   start = function(word, callback)
-    Wezterm.new(word, callback):gather()
+    local w = Wezterm.new(word, callback)
+    w:gather()
+    return function()
+      w:cancel()
+    end
   end,
 }

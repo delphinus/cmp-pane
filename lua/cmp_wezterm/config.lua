@@ -31,4 +31,13 @@ Config.set = function()
   end)
 end
 
+---@param opts? CmpWeztermOptions
+---@return nil
+Config.set_from_opts = function(opts)
+  local extended = vim.tbl_extend("force", default_config, opts or {})
+  vim.iter(pairs(extended)):each(function(k, v)
+    Config[k] = v
+  end)
+end
+
 return Config

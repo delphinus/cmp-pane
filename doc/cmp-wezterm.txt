@@ -1,4 +1,4 @@
-*cmp-wezterm.txt*				   nvim-cmp source for WezTerm
+*cmp-wezterm.txt*		    nvim-cmp / blink.cmp source for WezTerm
 
 License: MIT
 
@@ -15,9 +15,9 @@ Reference		|cmp-wezterm-reference|
 ==============================================================================
 INTRODUCTION					      *cmp-wezterm-introduction*
 
-This plugin is a source for |nvim-cmp| to gather candidates from any pane of
-WezTerm. You can complete words from contents in other panes in any tab /
-window.
+This plugin is a completion source for |nvim-cmp| or blink.cmp to gather
+candidates from any pane of WezTerm. You can complete words from contents in
+other panes in any tab / window.
 
 WezTerm - Wez's Terminal Emulator
 https://wezfurlong.org/wezterm/index.html
@@ -27,7 +27,7 @@ https://wezfurlong.org/wezterm/index.html
 REQUIREMENTS					      *cmp-wezterm-requirements*
 
 * Neovim v0.10.0 or newer
-* |nvim-cmp|
+* |nvim-cmp| or blink.cmp
 * WezTerm
 
 You need `wezterm` executable placed in `$PATH` or to supply with the full path
@@ -44,7 +44,7 @@ This is an example for |lazy.nvim|.
 ==============================================================================
 USAGE							     *cmp-wezterm-usage*
 
-Call with |cmp.setup|.
+With |nvim-cmp|, call with |cmp.setup|.
 >lua
     local cmp = require "cmp"
     cmp.setup {
@@ -66,6 +66,28 @@ You can supply any option here.
 	    executable = "wezterm",
 	    keyword_pattern = [[\w\+]],
 	    trigger_characters = { "." },
+	  },
+	},
+      },
+    }
+<
+With blink.cmp, register `blink-cmp-wezterm` as the provider module.
+>lua
+    require("blink.cmp").setup {
+      sources = {
+	default = { "wezterm" },
+	providers = {
+	  wezterm = {
+	    name = "wezterm",
+	    module = "blink-cmp-wezterm",
+	    -- default values
+	    opts = {
+	      all_tabs = true,
+	      all_windows = true,
+	      executable = "wezterm",
+	      keyword_pattern = [[\w\+]],
+	      trigger_characters = { "." },
+	    },
 	  },
 	},
       },
