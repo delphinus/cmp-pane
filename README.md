@@ -4,7 +4,7 @@
 
 ## Features
 
-A completion source that gathers candidates from contents of any other WezTerm pane.
+Pulls the visible text of other WezTerm panes (via `wezterm cli get-text`) and offers the words it finds — file paths from `ls`, identifiers from a `git log`, URLs in `curl` output, etc. — as completions in your buffer.
 
 - Gather completion candidates from other WezTerm panes via `wezterm cli`
 - Filter by current tab / current window (`all_tabs`, `all_windows` options)

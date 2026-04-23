@@ -16,8 +16,10 @@ Reference		|cmp-wezterm-reference|
 INTRODUCTION					      *cmp-wezterm-introduction*
 
 This plugin is a completion source for |nvim-cmp| or blink.cmp to gather
-candidates from any pane of WezTerm. You can complete words from contents in
-other panes in any tab / window.
+candidates from any pane of WezTerm. It pulls the visible text of other panes
+via `wezterm cli get-text` and offers the words it finds — file paths from
+`ls`, identifiers from a `git log`, URLs in `curl` output, etc. — as
+completions in your buffer.
 
 WezTerm - Wez's Terminal Emulator
 https://wezfurlong.org/wezterm/index.html
