@@ -44,7 +44,15 @@ require("cmp").setup {
     sources = {
       default = { "wezterm" },
       providers = {
-        wezterm = { name = "wezterm", module = "blink-cmp-wezterm" },
+        wezterm = {
+          name = "wezterm",
+          module = "blink-cmp-wezterm",
+          -- `wezterm cli list` plus the per-pane `get-text` calls can take
+          -- tens of milliseconds. Mark the provider async so blink.cmp shows
+          -- results from cheaper sources (buffer, snippets, etc.) immediately
+          -- and merges WezTerm candidates in as they arrive.
+          async = true,
+        },
       },
     },
   },
