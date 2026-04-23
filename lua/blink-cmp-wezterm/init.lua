@@ -31,14 +31,20 @@ function M:get_completions(ctx, callback)
       return callback()
     end
     ---@type blink.cmp.CompletionItem[]
-    local items = {}
-    for w, pane in pairs(words) do
-      table.insert(items, {
-        label = w,
-        insertText = w,
-        labelDetails = { detail = ("%s:%s:%s"):format(pane.win, pane.tab, pane.id) },
-      })
-    end
+    local items = vim.iter(words):fold(
+      {},
+      ---@param a blink.cmp.CompletionItem[]
+      ---@param word string
+      ---@param pane CmpWeztermPane
+      function(a, word, pane)
+        table.insert(a, {
+          label = word,
+          insertText = word,
+          labelDetails = { detail = ("%s:%s:%s"):format(pane.win, pane.tab, pane.id) },
+        })
+        return a
+      end
+    )
     callback {
       is_incomplete_forward = false,
       is_incomplete_backward = false,

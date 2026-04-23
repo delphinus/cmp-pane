@@ -30,11 +30,12 @@ end
 ---@return nil
 function Wezterm:cancel()
   self.cancelled = true
-  for _, h in ipairs(self._handles) do
+  ---@param handle vim.SystemObj
+  vim.iter(self._handles):each(function(handle)
     pcall(function()
-      h:kill(15)
+      handle:kill(15)
     end)
-  end
+  end)
   self._handles = {}
 end
 
