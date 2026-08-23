@@ -1,10 +1,10 @@
-local config = require "cmp_wezterm.config"
-local wezterm = require "cmp_wezterm.wezterm"
+local config = require "cmp_pane.config"
+local pane = require "cmp_pane.pane"
 
----@class CmpWezterm
+---@class CmpPane
 local source = {}
 
----@return CmpWezterm
+---@return CmpPane
 source.new = function()
   config.set()
   return setmetatable({}, { __index = source })
@@ -12,12 +12,12 @@ end
 
 ---@return string
 source.get_debug_name = function()
-  return "wezterm"
+  return "pane"
 end
 
 ---@return boolean
 source.is_available = function()
-  return wezterm.is_available
+  return pane.is_available()
 end
 
 ---@return string
@@ -35,13 +35,13 @@ end
 ---@return nil
 function source:complete(request, callback)
   local word = request.context.cursor_before_line:sub(request.offset)
-  wezterm.start(word, function(words)
+  pane.start(word, function(words)
     callback(words and vim
       .iter(words)
       ---@param w string
-      ---@param pane CmpWeztermPane
-      :map(function(w, pane)
-        return { word = w, label = w, labelDetails = { detail = ("%s:%s:%s"):format(pane.win, pane.tab, pane.id) } }
+      ---@param p CmpPanePane
+      :map(function(w, p)
+        return { word = w, label = w, labelDetails = { detail = ("%s:%s:%s"):format(p.win, p.tab, p.id) } }
       end)
       :totable())
   end)

@@ -1,0 +1,212 @@
+*cmp-pane.txt*	    nvim-cmp / blink.cmp source for terminal panes (kitty / WezTerm)
+
+License: MIT
+
+CONTENTS							*cmp-pane-content*
+
+Introduction		|cmp-pane-introduction|
+Requirements		|cmp-pane-requirements|
+Installation		|cmp-pane-installation|
+Usage			|cmp-pane-usage|
+Options			|cmp-pane-options|
+Migration		|cmp-pane-migration|
+Reference		|cmp-pane-reference|
+
+
+==============================================================================
+INTRODUCTION						   *cmp-pane-introduction*
+
+This plugin is a completion source for |nvim-cmp| or blink.cmp to gather
+candidates from any pane of your terminal. It pulls the visible text of other
+panes and offers the words it finds — file paths from `ls`, identifiers from a
+`git log`, URLs in `curl` output, etc. — as completions in your buffer.
+
+kitty and WezTerm are supported. The terminal is detected automatically from
+the environment, kitty first:
+
+	kitty		`$KITTY_WINDOW_ID` is set
+	WezTerm		`$WEZTERM_PANE` is set
+
+kitty is probed first because launching kitty from a WezTerm shell leaks
+`WEZTERM_*` into it, which would otherwise make both look available.
+
+kitty - the fast, feature-rich, GPU based terminal emulator
+https://sw.kovidgoyal.net/kitty/
+
+WezTerm - Wez's Terminal Emulator
+https://wezfurlong.org/wezterm/index.html
+
+
+==============================================================================
+REQUIREMENTS						   *cmp-pane-requirements*
+
+* Neovim v0.10.0 or newer
+* |nvim-cmp| or blink.cmp
+* kitty or WezTerm
+
+You need the `kitten` (kitty) or `wezterm` (WezTerm) executable placed in
+`$PATH`, or to supply the full path for it with |cmp-pane-options-executable|.
+
+With kitty, remote control has to be enabled, since the pane contents are read
+over it:
+>
+	allow_remote_control yes
+	listen_on unix:/tmp/kitty-{kitty_pid}
+<
+
+==============================================================================
+INSTALLATION						   *cmp-pane-installation*
+
+This is an example for |lazy.nvim|.
+>lua
+    -- for lazy.nvim
+    { "delphinus/cmp-pane" },
+<
+==============================================================================
+USAGE								  *cmp-pane-usage*
+
+With |nvim-cmp|, call with |cmp.setup|.
+>lua
+    local cmp = require "cmp"
+    cmp.setup {
+      sources = {
+	{ name = "pane" },
+      },
+    }
+<
+You can supply any option here.
+>lua
+    cmp.setup {
+      sources = {
+	{
+	  name = "pane",
+	  -- default values
+	  option = {
+	    all_tabs = true,
+	    all_windows = true,
+	    executable = nil,
+	    keyword_pattern = [[\w\+]],
+	    trigger_characters = { "." },
+	  },
+	},
+      },
+    }
+<
+With blink.cmp, register `blink-cmp-pane` as the provider module.
+>lua
+    require("blink.cmp").setup {
+      sources = {
+	default = { "pane" },
+	providers = {
+	  pane = {
+	    name = "pane",
+	    module = "blink-cmp-pane",
+	    -- default values
+	    opts = {
+	      all_tabs = true,
+	      all_windows = true,
+	      executable = nil,
+	      keyword_pattern = [[\w\+]],
+	      trigger_characters = { "." },
+	    },
+	  },
+	},
+      },
+    }
+<
+
+==============================================================================
+OPTIONS								*cmp-pane-options*
+
+						     *cmp-pane-options-all_tabs*
+all_tabs ~
+
+Default: `true`
+Type: `boolean`
+
+In default, it gather words from panes of all tabs. You can set this to `false`
+if you want to complete from panes in the current tab.
+
+						  *cmp-pane-options-all_windows*
+all_windows ~
+
+Default: `true`
+Type: `boolean`
+
+In default, it gather words from panes of all windows. You can set this to
+`false` if you want to complete from panes in the current window.
+
+						   *cmp-pane-options-executable*
+executable ~
+
+Default: `nil`
+Type: `string?`
+
+The executable to drive the terminal with. When `nil`, the default for the
+detected terminal is used: `kitten` for kitty, `wezterm` for WezTerm. Set this
+to supply a full path.
+
+					      *cmp-pane-options-keyword_pattern*
+keyword_pattern ~
+
+Default: `[[\w\+]]`
+Type: `string`
+
+You can match against words with this regex (Vim style).
+
+					   *cmp-pane-options-trigger_characters*
+trigger_characters ~
+
+Default: `{ "." }`
+Type: `string[]`
+
+You can trigger completions with these regexes (Vim style).
+
+
+==============================================================================
+MIGRATION							*cmp-pane-migration*
+
+This plugin used to be called `cmp-wezterm`. GitHub redirects the old
+repository URL, so existing plugin specs keep working, and the old module and
+source names are still available as thin shims:
+
+	old				new ~
+	`require "cmp_wezterm"`		`require "cmp_pane"`
+	`module = "blink-cmp-wezterm"`	`module = "blink-cmp-pane"`
+	`{ name = "wezterm" }`		`{ name = "pane" }`
+	`:h cmp-wezterm`		`:h cmp-pane`
+
+The shims will be removed in the next major version. To migrate, rename the
+plugin spec and the source name:
+>lua
+    -- before
+    { "delphinus/cmp-wezterm" }
+    sources = { { name = "wezterm" } }
+
+    -- after
+    { "delphinus/cmp-pane" }
+    sources = { { name = "pane" } }
+<
+Note that the `executable` option no longer defaults to `"wezterm"`; leave it
+unset to get the right default for whichever terminal is detected.
+
+The old help tags below are kept so existing links do not break:
+
+*cmp-wezterm.txt* *cmp-wezterm-content* *cmp-wezterm-introduction*
+*cmp-wezterm-requirements* *cmp-wezterm-installation* *cmp-wezterm-usage*
+*cmp-wezterm-options* *cmp-wezterm-options-all_tabs*
+*cmp-wezterm-options-all_windows* *cmp-wezterm-options-executable*
+*cmp-wezterm-options-keyword_pattern* *cmp-wezterm-options-trigger_characters*
+*cmp-wezterm-reference*
+
+
+==============================================================================
+REFERENCE						      *cmp-pane-reference*
+
+andersevenrud/cmp-tmux: Tmux completion source for nvim-cmp and nvim-compe
+https://github.com/andersevenrud/cmp-tmux
+
+Some code in cmp-pane is derived from cmp-tmux.
+
+
+vim:tw=78:fo=tcq2mM:ts=8:ft=help:norl:noet
