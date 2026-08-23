@@ -11,6 +11,7 @@ end
 
 ---@class CmpPaneGatherer
 ---@field backend CmpPaneBackend
+---@field current string? 自分のペイン id
 ---@field callback fun(result?: table<string, CmpPanePane>): nil
 ---@field word string
 ---@field cancelled boolean
@@ -21,8 +22,12 @@ local Pane = {}
 ---@param callback fun(result?: table<string, CmpPanePane>): nil
 ---@return CmpPaneGatherer
 Pane.new = function(word, callback)
+  local b = backend.detect()
   return setmetatable({
-    backend = backend.detect(),
+    backend = b,
+    -- 環境変数はここ (メインコンテキスト) で拾う。vim.system の on_exit は
+    -- fast event context で、vim.env を触ると E5560 になる。
+    current = b and b.current() or nil,
     word = word:lower(),
     callback = callback,
     cancelled = false,
@@ -57,7 +62,7 @@ function Pane:gather()
     if self.cancelled then
       return
     end
-    local pane_list = self.backend.parse(result)
+    local pane_list = self.backend.parse(result, self.current)
     if not pane_list then
       return self.callback()
     end

@@ -18,9 +18,14 @@
 ---@field name string
 ---@field executable string 既定の実行ファイル名 (config.executable で上書き可)
 ---@field is_available fun(): boolean
+---@field current fun(): string? 自分のペイン id。環境変数を読むのでメインコンテキストから呼ぶこと
 ---@field list_cmd fun(exe: string): string[] ペイン一覧を取るコマンド
----@field parse fun(stdout: string): CmpPanePaneList?
+---@field parse fun(stdout: string, current: string?): CmpPanePaneList?
 ---@field text_cmd fun(exe: string, id: string): string[] ペインの表示内容を取るコマンド
+---
+--- parse() は vim.system の on_exit から呼ばれる。そこは fast event context で
+--- vim.env (getenv) を触れないため、自分のペイン id は current() でメイン
+--- コンテキストのうちに拾っておいて引数で渡す。
 
 ---@type CmpPaneBackend
 local kitty = {
@@ -31,16 +36,20 @@ local kitty = {
     return vim.env.KITTY_WINDOW_ID ~= nil
   end,
 
+  current = function()
+    return vim.env.KITTY_WINDOW_ID
+  end,
+
   list_cmd = function(exe)
     return { exe, "@", "ls" }
   end,
 
-  parse = function(stdout)
+  parse = function(stdout, current)
     local ok, os_windows = pcall(vim.json.decode, stdout)
     if not ok or type(os_windows) ~= "table" then
       return nil
     end
-    local me = vim.env.KITTY_WINDOW_ID
+    local me = current
     ---@type CmpPanePaneList
     local result = { panes = {}, current = {} }
     for _, os_window in ipairs(os_windows) do
@@ -74,12 +83,16 @@ local wezterm = {
     return vim.env.WEZTERM_PANE ~= nil
   end,
 
+  current = function()
+    return vim.env.WEZTERM_PANE
+  end,
+
   list_cmd = function(exe)
     return { exe, "cli", "list" }
   end,
 
-  parse = function(stdout)
-    local me = vim.env.WEZTERM_PANE
+  parse = function(stdout, current)
+    local me = current
     -- `wezterm cli list` の表形式。先頭 3 列が WINID TABID PANEID。
     return vim.iter(vim.gsplit(stdout, "\n", { plain = true })):fold(
       { panes = {}, current = {} },
